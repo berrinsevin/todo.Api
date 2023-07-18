@@ -6,5 +6,7 @@ namespace todo.Api.Repositories
     {
         Post GetPost(Guid id);
         IEnumerable<Post> GetPosts();
+        void CreatePost(Post post);
+        void UpdatePost(Post post);
     }
 }

@@ -19,5 +19,16 @@ namespace todo.Api.Repositories
         {
             return posts.Where(x => x.Id == id).SingleOrDefault();
         }
+
+        public void CreatePost(Post post)
+        {
+            posts.Add(post);
+        }
+
+        public void UpdatePost(Post post)
+        {
+            var index = posts.FindIndex(x => x.Id == post.Id);
+            posts[index] = post;
+        }
     }
 }

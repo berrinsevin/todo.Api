@@ -1,9 +1,13 @@
+using todo.Api.Repositories;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// IPostRepositoryden bir tane instance oluşturur ve her çağrıldığında tekrar kullanılır yani sadece bir constructor kullanılmış olur
+builder.Services.AddSingleton<IPostRepository, PostRepository>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
