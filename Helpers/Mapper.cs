@@ -5,7 +5,7 @@ namespace todo.Api.Helpers
 {
     public static class TodoMapper
     {
-        public static PostDto Mapper(this Post post)
+        public static PostDto MappingPostDto(this Post post)
         {
             return new PostDto
             {
@@ -19,5 +19,16 @@ namespace todo.Api.Helpers
             };
         }
 
+        // public static UserDto MappingUserDto(this User user)
+        // {
+        //     return new UserDto
+        //     {
+        //         FirstName = user.FirstName,
+        //         LastName = user.LastName,
+        //         UserName = user.UserName,
+        //         UserId = user.UserId,
+        //         IsLord = user.IsLord
+        //     };
+        // }
     }
 }

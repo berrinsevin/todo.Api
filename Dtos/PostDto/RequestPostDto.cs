@@ -2,7 +2,7 @@ using todo.Api.Enums;
 
 namespace todo.Api.Dtos
 {
-    public class CreatePostDto
+    public class RequestPostDto
     {
         public string UserCode { get; init; }
         public ChannelCode ChannelCode { get; set; }
