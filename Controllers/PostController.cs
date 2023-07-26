@@ -1,8 +1,10 @@
 using todo.Api.Dtos;
 using todo.Api.Helpers;
+using todo.Api.Services;
 using todo.Api.Entities;
 using todo.Api.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using FluentValidation.Results;
 
 namespace todo.Api.Controllers
 {
@@ -10,85 +12,89 @@ namespace todo.Api.Controllers
     [Route("PostController")]
     public class PostController : ControllerBase
     {
-        private readonly IPostRepository repository;
+        private readonly IPostService service;
 
-        public PostController(IPostRepository repository)
+        public PostController(IPostService service)
         {
-            this.repository = repository;
+            this.service = service;
         }
 
-        // Dependency injection olmadan, controller'ın constructor ında repository için constructor oluşturulur 
-
-        //private readonly PostRepository repository;
-        // public PostController()
-        // {
-        //     repository = new PostRepository();
-        // }
-
-        [HttpGet("getPosts")]
-        public IEnumerable<PostDto> GetPosts()
+        [HttpGet("GetPostListAsync")]
+        public async Task<IActionResult> GetPostListAsync(RequestPostDto listRequest)
         {
-            var posts = repository.GetPosts().Select(x => x.Mapper());
-            return posts;
+            if (listRequest != null)
+            {
+                var postList = await service.GetPostListAsync(listRequest);
+
+                if (postList != null)
+                {
+                    return Ok(listRequest);
+                }
+            }
+
+            return BadRequest("There is no post matching the search criteria");
         }
 
-        [HttpGet("getPost/{id}")]
-        public ActionResult<PostDto> GetPost(Guid id)
+        [HttpGet("GetPostAsync/{id}")]
+        public async Task<ActionResult> GetPostAsync(long id)
         {
-            var post = repository.GetPost(id).Mapper();
+            var post = await service.GetPostByIdAsync(id);
 
             if (post == null)
             {
-                return NotFound(post);
+                return NotFound("There is no post suitable for this id");
             }
 
-            return post;
+            return Ok(post.MappingPostDto());
         }
 
-        [HttpPost("createPost")]
-        public ActionResult<PostDto> CreatePost(CreatePostDto createPostDto)
+        [HttpPost("CreatePostAsync")]
+        public async Task<ActionResult> CreatePostAsync(RequestPostDto postRequest)
         {
-            Post post = new()
+            ValidationResult validationResult = await new PostRequestValidator().ValidateAsync(postRequest);
+
+            if (validationResult.IsValid)
             {
-                Id = Guid.NewGuid(),
-                UserCode = createPostDto.UserCode,
-                EntryDate = DateTime.Today,
-                ChannelCode = createPostDto.ChannelCode,
-                Notes = createPostDto.Notes,
-                StatusCode = createPostDto.StatusCode,
-                ExpireDate = createPostDto.ExpireDate
-            };
+                if (await service.CreatePostAsync(postRequest))
+                {
+                    return Ok();
+                    //berrins oluşturulan post döndürülsün
+                    //return CreatedAtAction(nameof(GetPost), new { id = createPostDto.Id }, post.MappingPostDto());
+                }
+            }
 
-            repository.CreatePost(post);
-
-            //döndürülen nesnenin oluşturulma bilgilerini getirir
-            return CreatedAtAction(nameof(GetPost), new { id = post.Id }, post.Mapper());
+            return BadRequest();
         }
 
-        [HttpPut("updatePost/{id}")]
-        public ActionResult<PostDto> UpdateItem(Guid id, UpdatePostDto updatePostDto)
+        [HttpPut("UpdatePostAsync/{id}")]
+        public async Task<ActionResult> UpdatePostAsync(long id, RequestPostDto updateRequest)
         {
-            var existingPost = repository.GetPost(id);
+            ValidationResult validationResult = await new PostRequestValidator().ValidateAsync(updateRequest);
 
-            if (existingPost == null)
+            var currentPost = await service.GetPostByIdAsync(id);
+            if (currentPost == null)
             {
-                return NotFound();
+                return NotFound("There is no post suitable for this id");
             }
 
             Post post = new()
             {
                 Id = id,
-                UserCode = updatePostDto.UserCode,
-                EntryDate = existingPost.EntryDate,
-                ChannelCode = updatePostDto.ChannelCode,
-                Notes = updatePostDto.Notes,
-                StatusCode = updatePostDto.StatusCode,
-                ExpireDate = updatePostDto.ExpireDate
+                UserCode = updateRequest.UserCode,
+                ChannelCode = updateRequest.ChannelCode,
+                Notes = updateRequest.Notes,
+                StatusCode = updateRequest.StatusCode,
+                ExpireDate = updateRequest.ExpireDate
             };
 
-            repository.UpdatePost(post);
+            if (!await service.UpdatePostAsync(post))
+            {
+                return BadRequest();
+            }
 
-            return CreatedAtAction(nameof(GetPost), new { id = post.Id }, post.Mapper());
+            return Ok();
+            //berrins oluşturulan post döndürülsün
+            //return CreatedAtAction(nameof(GetPost), new { id = post.Id }, post.MappingPostDto());
         }
     }
 
